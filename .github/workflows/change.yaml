@@ -16,26 +16,29 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.TOKEN }}
 
     - name: Change Target Branch
       run: |
         # Set the new target branch name
         echo $GITHUB_REF
-        token=${{ secrets.TOKEN }}
         branch_hash=$(git ls-remote --heads https://github.com/${GITHUB_REPOSITORY}.git refs/heads/$TARGET_BRANCH)
-        echo https://kamal-devtron:${token}@github.com/${GITHUB_REPOSITORY}.git
-        if [[ -z $branch_hash ]]; then echo "Branch doesn't exist, creating now"; git checkout -b $TARGET_BRANCH; git push git push https://kamal-devtron:${token}@github.com/${GITHUB_REPOSITORY} $TARGET_BRANCH; fi 
-        PR_DATA=$(curl -s -H "Authorization: Bearer ${{ secrets.TOKEN }}" \
+        if [[ -z $branch_hash ]]; then echo "Branch doesn’t exsist, creating now"; git fetch; git checkout master; git checkout -b $TARGET_BRANCH; git push origin $TARGET_BRANCH; fi 
+        PR_DATA=$(curl -s -H "Authorization: Bearer ${TOKEN}" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}")
         TARGET_BRANCH=$(echo "$PR_DATA" | jq -r '.base.ref')
-        echo "Target Branch: $TARGET_BRANCH" 
+        echo "Target Branch: $TARGET_BRANCH"
          if [[ "$TARGET_BRANCH" != "main" ]]
         then
-          exit 0
-          echo "Bhai Branch dekh le"
-        fi  
-        curl -L -X PATCH -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28"  -H "Authorization: Bearer $token" \
-         https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/${{ github.event.pull_request.number }} -d '{"base": "${{ secrets.TARGET_BRANCH }}"}'
+          echo "Skipping as target branch isn't main"
+        else
+          echo "Target branch is main, changing target branch"
+          curl -sSL -X PATCH -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28"  -H "Authorization: Bearer ${TOKEN}" \
+         https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/${{ github.event.pull_request.number }} -d '{"base": "${{ secrets.TARGET_BRANCH }}"}' > /dev/null
+        fi
+        echo "Done"
         
       env:
         TARGET_BRANCH: ${{ secrets.TARGET_BRANCH }}
+        TOKEN: ${{ secrets.TOKEN }}
