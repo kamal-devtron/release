@@ -24,7 +24,7 @@ jobs:
         # Set the new target branch name
         echo $GITHUB_REF
         branch_hash=$(git ls-remote --heads https://github.com/${GITHUB_REPOSITORY}.git refs/heads/$TARGET_BRANCH)
-        if [[ -z $branch_hash ]]; then echo "Branch doesn’t exsist, creating now"; git fetch; git checkout master; git checkout -b $TARGET_BRANCH; git push origin $TARGET_BRANCH; fi 
+        if [[ -z $branch_hash ]]; then echo "Branch doesn’t exsist, creating now"; git fetch; git checkout main; git checkout -b $TARGET_BRANCH; git push origin $TARGET_BRANCH; fi 
         PR_DATA=$(curl -s -H "Authorization: Bearer ${TOKEN}" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}")
         TARGET_BRANCH=$(echo "$PR_DATA" | jq -r '.base.ref')
